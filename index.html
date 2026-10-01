@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<base target="_top">
+<meta charset="utf-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;700;800&family=Noto+Sans+JP:wght@400;500;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+html{-webkit-text-size-adjust:100%}
+body{margin:0}
+[hidden]{display:none!important}
+:root{
+  --bg:#F3F4F8; --surface:#FFFFFF; --surface-2:#EBEDF4; --line:#DADDE8;
+  --ink:#1D2033; --ink-2:#4A4F68; --ink-3:#7A7F98;
+  --accent:#5B4BD6; --accent-soft:#E9E6FB; --accent-ink:#FFFFFF;
+  --t1:#D2553A; --t1-soft:#FBE8E3;
+  --t2:#B37A0B; --t2-soft:#FBF0D9;
+  --t3:#3F68AE; --t3-soft:#E3EBF8;
+  --warn:#9A6A00; --warn-soft:#FFF2CC;
+  --bad:#B3261E; --bad-soft:#FBE4E2;
+  --good:#1E7A4C; --good-soft:#DDF3E6;
+  --hl:#FFF3B0; --hl-ink:#3A2E00;
+  --shadow:0 1px 2px rgba(29,32,51,.06),0 6px 20px rgba(29,32,51,.06);
+  --f-display:"M PLUS Rounded 1c","Hiragino Maru Gothic ProN","Noto Sans JP",system-ui,sans-serif;
+  --f-body:"Noto Sans JP","Hiragino Sans","Yu Gothic",system-ui,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#12131C; --surface:#1B1D29; --surface-2:#242736; --line:#303447;
+    --ink:#ECEDF5; --ink-2:#B5B8CC; --ink-3:#83879E;
+    --accent:#9D90FF; --accent-soft:#2A2650; --accent-ink:#12131C;
+    --t1:#FF8A6E; --t1-soft:#3A221D; --t2:#F1B743; --t2-soft:#35290F; --t3:#86AAF0; --t3-soft:#1D2A42;
+    --warn:#F1C04D; --warn-soft:#33290F; --bad:#FF8A80; --bad-soft:#3A1E1C; --good:#6FD39C; --good-soft:#15301F;
+    --hl:#4A3F0C; --hl-ink:#FFF1B8;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 20px rgba(0,0,0,.25);
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#12131C; --surface:#1B1D29; --surface-2:#242736; --line:#303447;
+  --ink:#ECEDF5; --ink-2:#B5B8CC; --ink-3:#83879E;
+  --accent:#9D90FF; --accent-soft:#2A2650; --accent-ink:#12131C;
+  --t1:#FF8A6E; --t1-soft:#3A221D; --t2:#F1B743; --t2-soft:#35290F; --t3:#86AAF0; --t3-soft:#1D2A42;
+  --warn:#F1C04D; --warn-soft:#33290F; --bad:#FF8A80; --bad-soft:#3A1E1C; --good:#6FD39C; --good-soft:#15301F;
+  --hl:#4A3F0C; --hl-ink:#FFF1B8;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 20px rgba(0,0,0,.25);
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:14px;line-height:1.6;padding-inline:16px;padding-block:0 48px}
+.wrap{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:20px}
+
+/* ---- top bar ---- */
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:10;background:var(--bg);padding-block:14px 10px;margin-inline:-16px;padding-inline:16px;border-bottom:1px solid var(--line)}
+.top-in{max-width:1180px;margin:0 auto;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px 16px}
+.brand{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+h1{font-family:var(--f-display);font-weight:800;font-size:22px;letter-spacing:.02em;margin:0}
+.clock{font-family:var(--f-mono);font-variant-numeric:tabular-nums;font-size:12px;color:var(--ink-3)}
+.maintabs{display:flex;gap:4px;background:var(--surface-2);padding:4px;border-radius:12px}
+.maintabs button{font:inherit;font-weight:700;font-size:14px;cursor:pointer;border:0;background:transparent;color:var(--ink-2);padding:7px 16px;border-radius:9px}
+.maintabs button[aria-selected="true"]{background:var(--surface);color:var(--ink);box-shadow:var(--shadow)}
+h2{font-family:var(--f-display);font-weight:700;font-size:18px;margin:0}
+.eyebrow{font-size:11px;letter-spacing:.12em;color:var(--ink-3);font-weight:700}
+.banner{padding:10px 14px;border-radius:10px;font-size:13px}
+.banner.info{background:var(--accent-soft);color:var(--ink)}
+.banner.warn{background:var(--warn-soft);color:var(--warn)}
+.banner.bad{background:var(--bad-soft);color:var(--bad)}
+.banner.good{background:var(--good-soft);color:var(--good)}
+select:focus-visible,button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* ---- chara view ---- */
+.me{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:16px}
+@media (max-width:820px){.me{grid-template-columns:1fr}}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:20px;box-shadow:var(--shadow)}
+.picker{display:flex;flex-direction:column;gap:8px}
+.picker label{font-weight:700;font-size:13px;color:var(--ink-2)}
+select{font:inherit;font-size:16px;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--surface-2);color:var(--ink);width:100%}
+.next{margin-top:18px;border-radius:12px;padding:18px;background:var(--accent-soft);display:flex;flex-direction:column;gap:10px}
+.next .boss{font-family:var(--f-display);font-weight:800;font-size:30px;line-height:1.2}
+.row{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+.time-big{font-family:var(--f-mono);font-weight:600;font-size:22px;font-variant-numeric:tabular-nums}
+.status{font-size:12px;font-weight:700;padding:2px 10px;border-radius:999px;background:var(--accent);color:var(--accent-ink)}
+.status.done{background:var(--surface-2);color:var(--ink-3)}
+.empty{color:var(--ink-3)}
+.team-pill{display:inline-flex;align-items:center;gap:6px;font-weight:700;font-size:14px;padding:3px 12px;border-radius:999px}
+.team-pill.sm{font-size:12px;padding:1px 10px}
+.team-pill.t1{background:var(--t1-soft);color:var(--t1)} .team-pill.t2{background:var(--t2-soft);color:var(--t2)} .team-pill.t3{background:var(--t3-soft);color:var(--t3)}
+.roles{display:flex;flex-wrap:wrap;gap:6px}
+.role{font-size:12px;font-weight:500;padding:2px 8px;border-radius:6px;background:var(--surface);color:var(--ink);border:1px solid var(--line)}
+.role.off{background:var(--warn-soft);color:var(--warn);border-color:transparent}
+.norole{font-size:12px;color:var(--ink-3)}
+.plan h3{margin:0 0 10px;font-size:13px;color:var(--ink-2)}
+.plan ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.plan li{display:grid;grid-template-columns:52px 1fr;gap:12px;padding:10px 0;border-top:1px solid var(--line)}
+.plan li:first-child{border-top:0}
+.plan .t{font-family:var(--f-mono);font-variant-numeric:tabular-nums;font-weight:600;color:var(--ink-2);padding-top:1px}
+.plan .b{display:flex;flex-direction:column;gap:4px}
+.plan .bn{font-weight:700}
+.plan li.skip .bn,.plan li.skip .t{color:var(--ink-3)}
+.plan li.is-next{background:linear-gradient(90deg,var(--accent-soft),transparent);border-radius:8px;padding-inline:8px;margin-inline:-8px}
+.plan li.past{opacity:.55}
+
+/* ---- team view ---- */
+.view-head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chips button{font:inherit;font-weight:700;font-size:13px;cursor:pointer;padding:6px 14px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--ink-2)}
+.chips button[aria-pressed="true"]{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.chips button .tm{font-family:var(--f-mono);font-weight:600;margin-right:6px}
+.board{display:flex;flex-direction:column;gap:12px}
+.slot{display:grid;grid-template-columns:120px minmax(0,1fr);background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.slot.past{opacity:.6}
+.slot-meta{padding:14px;background:var(--surface-2);display:flex;flex-direction:column;gap:2px;border-right:1px solid var(--line)}
+.slot-meta .t{font-family:var(--f-mono);font-weight:600;font-size:18px;font-variant-numeric:tabular-nums}
+.slot-meta .bn{font-family:var(--f-display);font-weight:800;font-size:16px}
+.slot-meta .live{align-self:flex-start;margin-top:6px;font-size:11px;font-weight:700;padding:1px 8px;border-radius:999px;background:var(--accent);color:var(--accent-ink)}
+.teams{display:grid;grid-template-columns:repeat(var(--cols,3),minmax(0,1fr))}
+.team{padding:12px 14px;border-left:1px solid var(--line);min-width:0;display:flex;flex-direction:column}
+.line{margin-top:auto;padding-top:10px;display:flex;justify-content:flex-end;align-items:baseline;gap:6px;font-size:12px;color:var(--ink-3)}
+.line b{font-family:var(--f-mono);font-variant-numeric:tabular-nums;font-size:14px;color:var(--ink)}
+.next .line{justify-content:flex-start;padding-top:0}
+.btn-line{font:inherit;font-weight:700;font-size:13px;cursor:pointer;padding:7px 12px;border-radius:9px;border:1px solid var(--accent);background:var(--surface);color:var(--accent);white-space:nowrap}
+.top-right{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.modal{position:fixed;inset:0;z-index:50;background:rgba(10,12,20,.55);display:flex;align-items:flex-start;justify-content:center;padding:calc(16px + env(safe-area-inset-top,0px)) 16px 16px;overflow-y:auto}
+.modal-card{background:var(--surface);color:var(--ink);border-radius:16px;max-width:980px;width:100%;padding:20px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:14px}
+.modal-head{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.modal-x{border:0;background:var(--surface-2);color:var(--ink);font-size:20px;line-height:1;width:36px;height:36px;border-radius:10px;cursor:pointer}
+.lm-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px}
+.lm-boss{border:1px solid var(--line);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.lm-boss h3{margin:0;font-family:var(--f-display);font-size:16px}
+.lm-boss .hp{font-size:12px;color:var(--ink-3)}
+.lm-boss .hp b{font-family:var(--f-mono);color:var(--ink-2)}
+.lm-t{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums;font-size:13px}
+.lm-t th,.lm-t td{padding:3px 6px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+.lm-t th{font-size:11px;color:var(--ink-3);font-weight:700}
+.lm-t th:first-child,.lm-t td:first-child{text-align:left}
+.lm-t td.v{font-family:var(--f-mono)}
+.lm-wide{overflow-x:auto}
+.team:first-child{border-left:0}
+.team-h{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px;font-weight:700;font-size:13px}
+.team-h .n{font-family:var(--f-mono);font-size:12px;color:var(--ink-3);font-weight:500}
+.t1 .lbl{color:var(--t1)} .t2 .lbl{color:var(--t2)} .t3 .lbl{color:var(--t3)}
+.members{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px}
+.members li{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 6px;padding:3px 6px;border-radius:6px}
+.members li .nm{font-weight:500}
+.members li.me-hl{background:var(--hl);color:var(--hl-ink)}
+.members li.me-hl .role{background:transparent;color:inherit;border-color:currentColor}
+.members li.off .nm{color:var(--ink-3);text-decoration:line-through}
+.none{color:var(--ink-3);font-size:12px;padding:3px 6px}
+@media (max-width:760px){
+  .slot{grid-template-columns:1fr}
+  .slot-meta{flex-direction:row;align-items:baseline;gap:10px;border-right:0;border-bottom:1px solid var(--line);padding:10px 14px}
+  .slot-meta .live{margin:0}
+  .teams{grid-template-columns:1fr}
+  .team{border-left:0;border-top:1px solid var(--line)}
+  .team:first-child{border-top:0}
+}
+.day{display:flex;flex-direction:column;gap:12px}
+.day-h{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;padding-top:6px;border-bottom:2px solid var(--ink);padding-bottom:6px}
+.day-h h3{margin:0;font-family:var(--f-display);font-weight:800;font-size:20px}
+.day-h .cnt{font-size:12px;color:var(--ink-3)}
+.tag{font-size:11px;font-weight:700;padding:1px 8px;border-radius:999px;background:var(--accent);color:var(--accent-ink)}
+.tag.soft{background:var(--accent-soft);color:var(--accent)}
+.day.past .day-h{border-bottom-color:var(--line)}
+.day.past .day-h h3{color:var(--ink-3)}
+.plan .dgroup{display:flex;flex-direction:column}
+.plan .dlabel{font-family:var(--f-display);font-weight:800;font-size:15px;padding:12px 0 2px;display:flex;gap:8px;align-items:center;border-top:1px solid var(--line)}
+.plan .dgroup:first-of-type .dlabel{border-top:0;padding-top:0}
+.plan .dgroup li:first-child{border-top:0}
+.chip-group{display:flex;flex-direction:column;gap:6px}
+.chip-group .glabel{font-size:12px;font-weight:700;color:var(--ink-2)}
+.slotchips-wrap{display:flex;flex-direction:column;gap:12px;width:100%}
+.filters{display:flex;flex-direction:column;gap:8px;align-items:flex-end;min-width:0}
+@media (max-width:760px){.filters{align-items:flex-start}}
+.chips.dates button{font-size:12px;padding:5px 12px}
+.chips.dates button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.chips.dates .past-toggle{border-style:dashed;color:var(--ink-3)}
+.legend{display:flex;flex-wrap:wrap;gap:14px;color:var(--ink-3);font-size:12px;align-items:center}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.sw{width:14px;height:14px;border-radius:4px;background:var(--hl);display:inline-block}
+
+/* ---- edit view ---- */
+.ed-bar{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.btn{font:inherit;font-weight:700;font-size:13px;cursor:pointer;padding:7px 14px;border-radius:9px;border:1px solid var(--line);background:var(--surface);color:var(--ink)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.danger{color:var(--bad);border-color:var(--bad)}
+.btn.danger.solid{background:var(--bad);color:var(--surface)}
+.btn.ghost{border-color:transparent;background:transparent;color:var(--ink-2)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.ed-meta{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end}
+.fld{display:flex;flex-direction:column;gap:4px}
+.fld span{font-size:12px;font-weight:700;color:var(--ink-2)}
+input[type=text],input[type=time]{font:inherit;font-size:15px;padding:7px 10px;border-radius:8px;border:1px solid var(--line);background:var(--surface-2);color:var(--ink);min-width:0;width:100%}
+.ed-meta .fld{width:180px;max-width:100%}
+input[type=date]{font:inherit;font-size:15px;padding:7px 10px;border-radius:8px;border:1px solid var(--line);background:var(--surface-2);color:var(--ink);min-width:0;width:100%}
+.ed-teams{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+@media (max-width:980px){.ed-teams{grid-template-columns:1fr}}
+.ed-team{border:1px solid var(--line);border-radius:12px;padding:12px;background:var(--surface);display:flex;flex-direction:column;gap:8px;min-width:0}
+.ed-row{display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"name flags" "roles roles";gap:6px;align-items:center;padding-bottom:8px;border-bottom:1px dashed var(--line)}
+.ed-row [data-f="name"]{grid-area:name}.ed-row [data-f="roles"]{grid-area:roles}.ed-row .flags{grid-area:flags}
+.ed-row .flags{display:flex;gap:4px;align-items:center}
+.ed-row .flags label{display:inline-flex;align-items:center;gap:3px;font-size:11px;color:var(--ink-2);white-space:nowrap;cursor:pointer}
+.ed-row .x{border:0;background:transparent;color:var(--ink-3);cursor:pointer;font-size:18px;line-height:1;padding:4px 6px;border-radius:6px}
+.ed-row .x:hover{color:var(--bad);background:var(--bad-soft)}
+.ed-row.dup input[data-f="name"]{border-color:var(--warn)}
+.hint{font-size:12px;color:var(--ink-3)}
+.save-bar{position:sticky;bottom:0;padding-block:12px calc(12px + env(safe-area-inset-bottom,0px));background:var(--bg);border-top:1px solid var(--line);display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between}
+.dirty{font-size:13px;font-weight:700;color:var(--warn)}
+.saved{font-size:13px;color:var(--ink-3)}
+.loading{padding:40px 0;text-align:center;color:var(--ink-3)}
+@media (prefers-reduced-motion:no-preference){.maintabs button,.chips button,.btn{transition:background .15s,color .15s}}
+</style>
+</head>
+<body>
+<div class="top">
+  <div class="top-in">
+    <div class="brand"><h1>週ボス編成表</h1><span class="clock" id="clock">--:--</span><span class="clock" id="sync"></span></div>
+    <div class="top-right">
+    <button type="button" class="btn-line" id="btn-line">2%ライン確認表</button>
+    <div class="maintabs" role="tablist" aria-label="表示切り替え">
+      <button type="button" role="tab" id="tab-chara" data-view="chara" aria-selected="true">キャラ別</button>
+      <button type="button" role="tab" id="tab-team" data-view="team" aria-selected="false">チーム別</button>
+      <button type="button" role="tab" id="tab-edit" data-view="edit" aria-selected="false">編集</button>
+    </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="linemodal" hidden role="dialog" aria-modal="true" aria-labelledby="lm-h">
+  <div class="modal-card">
+    <div class="modal-head"><h2 id="lm-h">2%ライン確認表</h2><button type="button" class="modal-x" id="lm-close" aria-label="閉じる">×</button></div>
+    <p class="hint" style="margin:0">報酬獲得に必要なダメージ（ボスHPの2%）。単位は B。人数は参加人数です。</p>
+    <div class="lm-grid" id="lm-grid"></div>
+    <div class="lm-boss"><h3>ダスク 人数別のボスHPとチーム復活回数</h3><div class="lm-wide" id="lm-dusk"></div></div>
+    <p class="hint" style="margin:0">参考: メイプルストーリーM攻略WIKI（<a href="https://wikiwiki.jp/maplemobile/" target="_blank" rel="noopener">wikiwiki.jp/maplemobile</a>）。WIKIに記載のない値はダメージ測定器で算出した目安です（表の作成: Arknightss）。</p>
+  </div>
+</div>
+
+<div class="wrap" style="padding-top:20px">
+  <div id="banner" hidden></div>
+
+  <section id="v-chara" role="tabpanel" aria-labelledby="tab-chara">
+    <div class="me">
+      <div class="panel">
+        <div class="picker">
+          <label for="who">キャラ名</label>
+          <select id="who"></select>
+        </div>
+        <div class="next" id="next"><div class="loading">読み込み中…</div></div>
+      </div>
+      <div class="panel plan" id="plan"></div>
+    </div>
+  </section>
+
+  <section id="v-team" role="tabpanel" aria-labelledby="tab-team" hidden style="display:flex;flex-direction:column;gap:14px">
+    <div class="view-head">
+      <h2>チーム別 参加者一覧</h2>
+      <div class="filters">
+        <div class="chips" id="teamchips" role="group" aria-label="表示するチーム"></div>
+        <div class="chips dates" id="datechips" role="group" aria-label="表示する日付"></div>
+      </div>
+    </div>
+    <div class="legend">
+      <span><i class="sw"></i>キャラ別で選択中のキャラ</span>
+      <span><span class="role off">お休み</span>欠席</span>
+    </div>
+    <div class="board" id="board"><div class="loading">読み込み中…</div></div>
+  </section>
+
+  <section id="v-edit" role="tabpanel" aria-labelledby="tab-edit" hidden style="display:flex;flex-direction:column;gap:14px">
+    <div class="view-head">
+      <h2>編成を編集</h2>
+      <div class="ed-bar" id="slotchips"></div>
+    </div>
+    <div id="editor"><div class="loading">読み込み中…</div></div>
+  </section>
+</div>
+
+<script>
+const TEAMS=[{id:"t1",label:"チーム🍄"},{id:"t2",label:"チーム🦁"},{id:"t3",label:"チーム🐘"}];
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const toMin=t=>{const m=/^(\d{1,2}):(\d{2})$/.exec(t||"");return m?(+m[1])*60+(+m[2]):NaN};
+const nowMin=()=>{const d=new Date();return d.getHours()*60+d.getMinutes()};
+const hhmm=n=>String(Math.floor(n/60)).padStart(2,"0")+":"+String(n%60).padStart(2,"0");
+const store={get(k,d){try{return localStorage.getItem(k)??d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
+// サーバー呼び出し。Apps Script の画面内なら google.script.run、
+// GitHub Pages などの外の画面からは Apps Script の公開URLへ JSON で問い合わせる。
+// 外からの問い合わせには Google のログイン情報が付かないので、複数アカウントでログインしていても開ける。
+const API_URL="https://script.google.com/macros/s/AKfycbwmsvTIsoTOlvr9yLvdheogoXsibr1o4DN6w3HwY5nql_PZ1WFokyzPoAZEhE3SBQzm/exec";
+const call=(fn,...args)=>{
+  if(window.google?.script?.run)return new Promise((res,rej)=>google.script.run.withSuccessHandler(res).withFailureHandler(rej)[fn](...args));
+  const req=fn==="getData"
+    ?fetch(API_URL+"?api=data",{credentials:"omit",cache:"no-store"})
+    :fetch(API_URL,{method:"POST",credentials:"omit",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({fn,args})});
+  return req.then(r=>{if(!r.ok)throw new Error("HTTP "+r.status);return r.json()});
+};
+
+// ---- state ----
+let slots=[], loaded=false, needsPass=false, loadFailed=false;
+let pass=store.get("wb-pass",""), unlocked=false;
+let view=store.get("wb-view","chara");
+if(!["chara","team","edit"].includes(view))view="chara";
+let who=store.get("wb-who","");
+let teamFilter=store.get("wb-team","all");
+let edId=null, draft=null, dirty=false, remoteChanged=false, confirmDel=false, edMsg=null, saving=false;
+
+const WD=["日","月","火","水","木","金","土"];
+const ymd=d=>d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+const todayStr=()=>ymd(new Date());
+const parseYmd=s=>{const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(s||"");return m?new Date(+m[1],+m[2]-1,+m[3]):null};
+// 例: 10/2（金）
+function dateLabel(s){const d=parseYmd(s);return d?`${d.getMonth()+1}/${d.getDate()}（${WD[d.getDay()]}）`:"日付未設定"}
+function dateTag(s){
+  if(!s)return"";const t=parseYmd(todayStr()),d=parseYmd(s);const n=Math.round((d-t)/864e5);
+  return n===0?'<span class="tag">今日</span>':n===1?'<span class="tag soft">明日</span>':"";
+}
+function normalize(list){
+  const arr=list.map(s=>{
+    const teams={};
+    for(const t of TEAMS)teams[t.id]=(s.teams?.[t.id]||[]).map(m=>({
+      name:String(m.name||""),roles:String(m.roles||""),off:!!m.off,
+      roleList:String(m.roles||"").split("/").map(x=>x.trim()).filter(Boolean)}));
+    const date=String(s.date||""), d=parseYmd(date), mins=toMin(s.time);
+    const startMs=d&&!isNaN(mins)?d.getTime()+mins*6e4:NaN;
+    return{id:s.id,boss:String(s.boss||""),time:String(s.time||""),date,version:s.version,teams,start:mins,startMs};
+  }).sort((a,b)=>((a.date||"9999")<(b.date||"9999")?-1:(a.date||"9999")>(b.date||"9999")?1:0)||(a.start-b.start)||String(a.id).localeCompare(String(b.id)));
+  // 終了時刻 = 同じ日の次の枠の開始（なければ開始の30分後）
+  arr.forEach((s,i)=>{const n=arr[i+1];s.endMs=n&&n.date===s.date&&n.startMs>s.startMs?n.startMs:s.startMs+30*6e4});
+  return arr;
+}
+// 日付ごとにまとめる（並び順は normalize 済み）
+function groupByDate(list){const g=[];for(const s of list){const last=g[g.length-1];if(last&&last.date===s.date)last.items.push(s);else g.push({date:s.date,items:[s]})}return g}
+function allNames(){return[...new Set(slots.flatMap(s=>TEAMS.flatMap(t=>s.teams[t.id].map(m=>m.name))).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"ja"))}
+const rolesHTML=m=>{
+  const p=[];
+  if(m.off)p.push('<span class="role off">お休み</span>');
+  m.roleList.forEach(r=>p.push(`<span class="role">${esc(r)}</span>`));
+  return p.join("");
+};
+const hasRole=m=>m.off||m.roleList.length;
+
+// ---- 2%ライン（報酬獲得に必要なダメージ、単位B。v は 2人〜10人） ----
+const LINES={
+  lucid:{name:"ルシード",hp:10387,v:[51.9,72.7,93.5,114.2,132.9,151.6,170.3,186.9,207.7]},
+  demian:{name:"デミアン",note:"ノーマル・ハード共通",hp:4098,v:[20.5,28.7,36.9,45.1,52.5,59.9,67.3,73.8,82.0]},
+  arkN:{name:"アルコーン",note:"ノーマル",hp:2938,v:[14.7,20.6,26.5,32.3,37.6,42.9,48.2,52.9,58.8]},
+  arkH:{name:"アルコーン",note:"ハード",hp:33840,v:[169.2,236.9,304.8,372.2,433.2,494.0,555.0,609.1,676.8]},
+  dusk:{name:"ダスク",hp:17626,v:[88.1,123.4,158.6,193.9,225.6,257.3,289.0,317.3,352.5]},
+  suu:{name:"スウ",hp:3665,v:[18.3,25.7,33.0,40.3,46.9,53.5,60.1,66.0,73.3]},
+};
+const DUSK_TABLE={hpPct:[25,25,35,45,55,64,73,82,90,100],revive:[3,3,4,5,5,6,7,8,9,10]}; // 1人〜10人
+function bossKey(n){
+  n=String(n||"");
+  if(n.includes("ダスク"))return"dusk";
+  if(n.includes("ルシ"))return"lucid";
+  if(n.includes("デミ"))return"demian";
+  if(n.includes("スウ"))return"suu";
+  if(n.includes("コーン")||n.includes("アルコ"))return(n.startsWith("ハド")||n.includes("ハード"))?"arkH":"arkN";
+  return null;
+}
+// 人数からその枠の2%ラインを出す。表は2人からなので、1人のときは2人の値を使う。
+function lineFor(boss,count){
+  const k=bossKey(boss);if(!k||count<=0)return null;
+  const c=Math.min(Math.max(count,2),10);
+  return{val:LINES[k].v[c-2],count,approx:count<2||count>10};
+}
+const lineHTML=(boss,count)=>{
+  const l=lineFor(boss,count);if(!l)return"";
+  return`<div class="line">2%ライン <b>${l.val.toFixed(1)}B</b><span>（${l.count}人${l.approx?(l.count<2?"・2人の値":"・10人の値"):""}）</span></div>`;
+};
+function renderLineTables(){
+  document.getElementById("lm-grid").innerHTML=Object.values(LINES).map(L=>`
+    <div class="lm-boss"><h3>${esc(L.name)}${L.note?`<span class="hp">（${esc(L.note)}）</span>`:""}</h3>
+      <div class="hp">ボスHP <b>${L.hp.toLocaleString()}B</b></div>
+      <table class="lm-t"><thead><tr><th>人数</th><th>2%ライン</th></tr></thead><tbody>
+      ${L.v.map((v,i)=>`<tr><td>${i+2}人</td><td class="v">${v.toFixed(1)}B</td></tr>`).join("")}</tbody></table></div>`).join("");
+  document.getElementById("lm-dusk").innerHTML=`<table class="lm-t"><thead><tr><th>人数</th>${DUSK_TABLE.hpPct.map((_,i)=>`<th>${i+1}人</th>`).join("")}</tr></thead><tbody>
+    <tr><td>ボスHP%</td>${DUSK_TABLE.hpPct.map(v=>`<td class="v">${v}%</td>`).join("")}</tr>
+    <tr><td>チーム復活回数</td>${DUSK_TABLE.revive.map(v=>`<td class="v">${v}</td>`).join("")}</tr></tbody></table>`;
+}
+const lm=document.getElementById("linemodal");
+document.getElementById("btn-line").addEventListener("click",()=>{renderLineTables();lm.hidden=false;document.getElementById("lm-close").focus()});
+document.getElementById("lm-close").addEventListener("click",()=>{lm.hidden=true});
+lm.addEventListener("click",e=>{if(e.target===lm)lm.hidden=true});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!lm.hidden)lm.hidden=true});
+function banner(kind,text){
+  const b=document.getElementById("banner");
+  if(!kind){b.hidden=true;return}
+  b.className="banner "+kind;b.textContent=text;b.hidden=false;
+}
+
+// ---- tabs ----
+document.querySelector(".maintabs").addEventListener("click",e=>{
+  const b=e.target.closest("button[data-view]");if(!b)return;
+  if(view==="edit"&&b.dataset.view!=="edit"&&dirty){edMsg={kind:"warn",text:"未保存の変更があります。保存するか「変更を破棄」してから切り替えてください。"};renderEditor();return}
+  view=b.dataset.view;store.set("wb-view",view);
+  renderView();window.scrollTo(0,0);
+});
+function renderView(){
+  for(const v of ["chara","team","edit"]){
+    document.getElementById("v-"+v).hidden=v!==view;
+    document.getElementById("tab-"+v).setAttribute("aria-selected",String(v===view));
+  }
+}
+
+// ---- キャラ別 ----
+const sel=document.getElementById("who");
+sel.addEventListener("change",()=>{who=sel.value;store.set("wb-who",who);renderChara();renderTeam()});
+function renderChara(){
+  if(!loaded)return;
+  const names=allNames();
+  if(!names.includes(who))who=names[0]||"";
+  if([...sel.options].map(o=>o.value).join("\n")!==names.join("\n"))sel.innerHTML=names.map(n=>`<option value="${esc(n)}">${esc(n)}</option>`).join("");
+  sel.value=who;
+  const now=Date.now(), today=todayStr();
+  // このキャラが入っている枠だけ（過去の日付は出さない）
+  const entries=[];
+  for(const s of slots){
+    if(s.date&&s.date<today)continue;
+    for(const t of TEAMS){const m=s.teams[t.id].find(x=>x.name===who);if(m){entries.push({slot:s,team:t,m});break}}
+  }
+  const joins=entries.filter(a=>!a.m.off);
+  const nxt=joins.find(a=>!isNaN(a.slot.startMs)&&a.slot.endMs>now);
+  const nx=document.getElementById("next");
+  if(!nxt){
+    nx.innerHTML=`<div class="eyebrow">次のボス</div><div class="empty">今後の参加予定はありません。</div>`;
+  }else{
+    const live=nxt.slot.startMs<=now, diff=Math.round((nxt.slot.startMs-now)/6e4);
+    const when=live?"進行中":diff<60?`あと${diff}分`:diff<24*60?`あと${Math.floor(diff/60)}時間${diff%60}分`:`${Math.floor(diff/1440)}日後`;
+    nx.innerHTML=`<div class="eyebrow">次のボス</div>
+      <div class="row" style="gap:8px"><strong style="font-size:16px">${esc(dateLabel(nxt.slot.date))}</strong>${dateTag(nxt.slot.date)}</div>
+      <div class="boss">${esc(nxt.slot.boss)}</div>
+      <div class="row"><span class="time-big">${esc(nxt.slot.time)}</span><span class="status">${when}</span></div>
+      <div class="row"><span class="team-pill ${nxt.team.id}">${esc(nxt.team.label)}</span></div>
+      <div class="roles">${hasRole(nxt.m)?rolesHTML(nxt.m):'<span class="norole">役割の指定なし</span>'}</div>
+      ${lineHTML(nxt.slot.boss,nxt.slot.teams[nxt.team.id].filter(m=>!m.off).length)}`;
+  }
+  // 参加（お休み以外）が1枠もない日付は出さない
+  const days=groupByDate(entries.map(a=>a.slot)).filter(g=>g.items.some(s=>joins.some(a=>a.slot===s)));
+  const byslot=new Map(entries.map(a=>[a.slot,a]));
+  document.getElementById("plan").innerHTML=`<h3>${esc(who)} さんの予定（${joins.length}枠参加）</h3>${days.length?days.map(g=>`
+    <div class="dgroup"><div class="dlabel">${esc(dateLabel(g.date))}${dateTag(g.date)}</div><ol>${g.items.map(s=>{
+      const a=byslot.get(s), past=s.endMs<=now, isNext=nxt&&a===nxt;
+      return`<li class="${a.m.off?"skip":""} ${isNext?"is-next":""} ${past?"past":""}"><span class="t">${esc(s.time)}</span><div class="b">
+        <div class="row" style="gap:8px"><span class="bn">${esc(s.boss)}</span><span class="team-pill sm ${a.team.id}">${esc(a.team.label)}</span></div>
+        <div class="roles">${hasRole(a.m)?rolesHTML(a.m):'<span class="norole">役割なし</span>'}</div></div></li>`;
+    }).join("")}</ol></div>`).join(""):'<p class="empty" style="margin:0">今後の参加予定はありません。</p>'}`;
+}
+
+// ---- チーム別 ----
+document.getElementById("teamchips").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;teamFilter=b.dataset.id;store.set("wb-team",teamFilter);renderTeam()});
+let showPast=false;
+// 表示する日付: "" は「いちばん近い日付」、"all" はすべて、それ以外は yyyy-mm-dd
+let dateFilter=store.get("wb-date","");
+document.getElementById("datechips").addEventListener("click",e=>{
+  const b=e.target.closest("button");if(!b)return;
+  if(b.dataset.act==="past"){showPast=!showPast;if(!showPast&&dateFilter&&dateFilter!=="all"&&dateFilter<todayStr())dateFilter=""}
+  else dateFilter=b.dataset.date;
+  store.set("wb-date",dateFilter);renderTeam();
+});
+function renderTeam(){
+  document.getElementById("teamchips").innerHTML=[{id:"all",label:"全チーム"},...TEAMS].map(o=>`<button type="button" data-id="${o.id}" aria-pressed="${teamFilter===o.id}">${esc(o.label)}</button>`).join("");
+  if(!loaded)return;
+  const now=Date.now(), today=todayStr();
+  const shown=teamFilter==="all"?TEAMS:TEAMS.filter(t=>t.id===teamFilter);
+  const groups=groupByDate(slots);
+  const pastN=groups.filter(g=>g.date&&g.date<today).length;
+  const candidates=groups.filter(g=>showPast||!g.date||g.date>=today);
+  // 選んだ日付がもう無ければ、いちばん近い日付に戻す
+  const upcoming=candidates.find(g=>!g.date||g.date>=today)||candidates[0];
+  const cur=dateFilter==="all"?"all":candidates.some(g=>g.date===dateFilter)?dateFilter:(upcoming?upcoming.date:"all");
+  const visible=cur==="all"?candidates:candidates.filter(g=>g.date===cur);
+  document.getElementById("datechips").innerHTML=candidates.length?
+    candidates.map(g=>`<button type="button" data-date="${esc(g.date)}" aria-pressed="${cur===g.date}">${esc(dateLabel(g.date))}${g.date===today?" 今日":""}</button>`).join("")+
+    `<button type="button" data-date="all" aria-pressed="${cur==="all"}">すべて</button>`+
+    (pastN?`<button type="button" class="past-toggle" data-act="past">${showPast?"過去を隠す":`過去も表示（${pastN}日）`}</button>`:""):"";
+  const slotHTML=s=>{
+    const past=s.endMs<=now, live=s.startMs<=now&&now<s.endMs;
+    return`<article class="slot ${past?"past":""}">
+      <div class="slot-meta"><span class="t">${esc(s.time)}</span><span class="bn">${esc(s.boss)}</span>${live?'<span class="live">進行中</span>':""}</div>
+      <div class="teams" style="--cols:${shown.length}">${shown.map(t=>{
+        const ms=s.teams[t.id], cnt=ms.filter(m=>!m.off).length;
+        return`<div class="team ${t.id}"><div class="team-h"><span class="lbl">${esc(t.label)}</span><span class="n">${ms.length?cnt+"名":""}</span></div>${
+          ms.length?`<ul class="members">${ms.map(m=>`<li class="${m.name===who?"me-hl":""} ${m.off?"off":""}"><span class="nm">${esc(m.name)}</span>${rolesHTML(m)}</li>`).join("")}</ul>${lineHTML(s.boss,cnt)}`:'<div class="none">この枠はなし</div>'
+        }</div>`}).join("")}</div></article>`};
+  document.getElementById("board").innerHTML=
+    (visible.length?visible.map(g=>`<section class="day ${g.date&&g.date<today?"past":""}">
+      <div class="day-h"><h3>${esc(dateLabel(g.date))}</h3>${dateTag(g.date)}<span class="cnt">${g.items.length}枠</span></div>
+      ${g.items.map(slotHTML).join("")}</section>`).join(""):'<div class="empty">今後のボス枠はありません。「編集」タブから追加できます。</div>');
+}
+
+// ---- 編集 ----
+const canEdit=()=>!needsPass||unlocked;
+function draftFrom(s){return{id:s.id,boss:s.boss,time:s.time,date:s.date,version:s.version,isNew:false,teams:Object.fromEntries(TEAMS.map(t=>[t.id,s.teams[t.id].map(m=>({name:m.name,roles:m.roles,off:m.off}))]))}}
+function openSlot(id){
+  const s=slots.find(x=>x.id===id);
+  edId=id;draft=s?draftFrom(s):null;dirty=false;remoteChanged=false;confirmDel=false;edMsg=null;
+  renderEditor();
+}
+function markDirty(){if(!dirty){dirty=true;updateSaveBar()}}
+
+document.getElementById("slotchips").addEventListener("click",e=>{
+  const b=e.target.closest("button");if(!b)return;
+  if(dirty&&b.dataset.id!==edId){edMsg={kind:"warn",text:"未保存の変更があります。保存するか「変更を破棄」してから別の枠を開いてください。"};renderEditor();return}
+  if(b.dataset.act==="add"){
+    // 新しい枠の日付は、開いていた枠の日付（なければ今日）を初期値にする
+    const base=slots.find(x=>x.id===edId)?.date||todayStr();
+    edId="__new";draft={id:null,boss:"",time:"",date:base,version:0,isNew:true,teams:{t1:[],t2:[],t3:[]}};
+    dirty=true;remoteChanged=false;confirmDel=false;edMsg=null;renderEditor();return;
+  }
+  openSlot(b.dataset.id);
+});
+function renderSlotChips(){
+  const today=todayStr();
+  const groups=groupByDate(slots).filter(g=>!g.date||g.date>=today||g.items.some(s=>s.id===edId));
+  const hidden=slots.length-groups.reduce((n,g)=>n+g.items.length,0);
+  document.getElementById("slotchips").innerHTML=`<div class="slotchips-wrap">${groups.map(g=>`
+    <div class="chip-group"><span class="glabel">${esc(dateLabel(g.date))}</span><div class="chips">${g.items.map(s=>`<button type="button" data-id="${esc(s.id)}" aria-pressed="${s.id===edId}"><span class="tm">${esc(s.time)}</span>${esc(s.boss)}</button>`).join("")}</div></div>`).join("")}
+    ${draft?.isNew?`<div class="chip-group"><span class="glabel">新しい枠</span><div class="chips"><button type="button" data-id="__new" aria-pressed="true">新しい枠</button></div></div>`:""}
+    ${hidden?`<span class="hint">過去の日付の枠（${hidden}件）は一覧から省いています。</span>`:""}
+    ${canEdit()&&loaded?'<button type="button" class="btn" data-act="add" style="align-self:flex-start">＋ 枠を追加</button>':""}</div>`;
+}
+
+function renderEditor(){
+  renderSlotChips();
+  const el=document.getElementById("editor");
+  if(!loaded)return;
+  if(!canEdit()){
+    el.innerHTML=`<div class="panel" style="display:flex;flex-direction:column;gap:12px;max-width:420px">
+      <p style="margin:0">編集するには合言葉を入力してください。</p>
+      ${edMsg?`<div class="banner ${edMsg.kind}">${esc(edMsg.text)}</div>`:""}
+      <form id="passform" class="row" style="gap:8px">
+        <input type="password" id="passinput" autocomplete="off" placeholder="合言葉" aria-label="合言葉" style="font:inherit;font-size:15px;padding:7px 10px;border-radius:8px;border:1px solid var(--line);background:var(--surface-2);color:var(--ink);flex:1;min-width:0">
+        <button type="submit" class="btn primary">編集を始める</button>
+      </form></div>`;
+    return;
+  }
+  if(!draft){
+    el.innerHTML=`${edMsg?`<div class="banner ${edMsg.kind}" style="margin-bottom:12px">${esc(edMsg.text)}</div>`:""}<div class="panel"><p class="empty" style="margin:0">上の一覧から編集したいボス枠を選んでください。新しい枠は「＋ 枠を追加」から作れます。</p></div>`;return;
+  }
+  const names=allNames();
+  const dupSet=dupNames(draft);
+  el.innerHTML=`
+    ${remoteChanged?`<div class="banner info" style="margin-bottom:12px">この枠は他の人が更新しました。最新を読み込んでから編集し直してください。 <button type="button" class="btn" data-act="reload">最新を読み込む</button></div>`:""}
+    ${edMsg?`<div class="banner ${edMsg.kind}" style="margin-bottom:12px">${esc(edMsg.text)}</div>`:""}
+    <div class="panel" style="display:flex;flex-direction:column;gap:16px">
+      <div class="ed-meta">
+        <label class="fld"><span>ボス名</span><input type="text" id="ed-boss" data-f="boss" value="${esc(draft.boss)}" placeholder="例: ルシード"></label>
+        <label class="fld" style="width:170px"><span>日付${draft.date?`（${esc(WD[parseYmd(draft.date)?.getDay()]??"")}曜日）`:""}</span><input type="date" id="ed-date" data-f="date" value="${esc(draft.date)}"></label>
+        <label class="fld" style="width:140px"><span>開始時間</span><input type="time" id="ed-time" data-f="time" value="${esc(draft.time)}"></label>
+      </div>
+      <datalist id="namelist">${names.map(n=>`<option value="${esc(n)}"></option>`).join("")}</datalist>
+      <div class="ed-teams">${TEAMS.map(t=>`
+        <div class="ed-team ${t.id}">
+          <div class="team-h"><span class="lbl">${esc(t.label)}</span><span class="n">${draft.teams[t.id].length}名</span></div>
+          ${draft.teams[t.id].map((m,i)=>`
+            <div class="ed-row ${dupSet.has(m.name)?"dup":""}" data-t="${t.id}" data-i="${i}">
+              <input type="text" id="ed-${t.id}-${i}-name" data-f="name" list="namelist" value="${esc(m.name)}" placeholder="キャラ名" aria-label="キャラ名">
+              <input type="text" id="ed-${t.id}-${i}-roles" data-f="roles" value="${esc(m.roles)}" placeholder="役割（/ 区切り）" aria-label="役割">
+              <div class="flags">
+                <label><input type="checkbox" id="ed-${t.id}-${i}-off" data-f="off" ${m.off?"checked":""}>休</label>
+                <button type="button" class="x" data-act="rm" aria-label="${esc(m.name||"この行")}を削除">×</button>
+              </div>
+            </div>`).join("")}
+          <button type="button" class="btn ghost" data-act="addrow" data-t="${t.id}" style="align-self:flex-start">＋ メンバーを追加</button>
+        </div>`).join("")}
+      </div>
+      <p class="hint" style="margin:0">役割は「無敵 / 初手バインド」のように / で区切ると別々のバッジになります。「休」はお休み（欠席）扱いで、キャラ別の次のボスに出なくなります。${dupSet.size?` <strong style="color:var(--warn)">同じ枠に同名が複数います: ${esc([...dupSet].join("、"))}</strong>`:""}</p>
+    </div>
+    <div class="save-bar">
+      <div id="dirtyflag"></div>
+      <div class="row" style="gap:8px">
+        ${draft.isNew?"":(confirmDel?`<span class="dirty" style="color:var(--bad)">この枠を削除しますか？</span><button type="button" class="btn danger solid" data-act="delyes">削除する</button><button type="button" class="btn" data-act="delno">やめる</button>`:`<button type="button" class="btn danger" data-act="del">枠を削除</button>`)}
+        <button type="button" class="btn" data-act="discard" id="btn-discard">変更を破棄</button>
+        <button type="button" class="btn primary" data-act="save" id="btn-save">保存</button>
+      </div>
+    </div>`;
+  updateSaveBar();
+}
+function updateSaveBar(){
+  const f=document.getElementById("dirtyflag");if(!f)return;
+  f.innerHTML=saving?'<span class="saved">保存中…</span>':dirty?'<span class="dirty">未保存の変更があります</span>':'<span class="saved">保存済み</span>';
+  const s=document.getElementById("btn-save"),d=document.getElementById("btn-discard");
+  if(s)s.disabled=!dirty||saving||remoteChanged; if(d)d.disabled=!dirty||saving;
+}
+function dupNames(d){const seen=new Set(),dup=new Set();for(const t of TEAMS)for(const m of d.teams[t.id]){const n=m.name.trim();if(!n)continue;if(seen.has(n))dup.add(n);seen.add(n)}return dup}
+
+const edEl=document.getElementById("editor");
+edEl.addEventListener("submit",async e=>{
+  if(e.target.id!=="passform")return;
+  e.preventDefault();
+  const p=document.getElementById("passinput").value;
+  try{const r=await call("checkPasscode",p);
+    if(r.ok){pass=p;unlocked=true;store.set("wb-pass",p);edMsg=null}
+    else edMsg={kind:"bad",text:"合言葉が違います。"};
+  }catch(err){edMsg={kind:"bad",text:"確認できませんでした。通信状況を確認してもう一度お試しください。"}}
+  renderEditor();
+});
+edEl.addEventListener("input",e=>{
+  const f=e.target.dataset.f;if(!f||!draft)return;
+  if(f==="boss"||f==="time"||f==="date"){draft[f]=e.target.value;if(f==="date"){const l=e.target.closest(".fld")?.querySelector("span");const d=parseYmd(draft.date);if(l)l.textContent="日付"+(d?`（${WD[d.getDay()]}曜日）`:"")}}
+  else{const r=e.target.closest(".ed-row");const m=draft.teams[r.dataset.t][+r.dataset.i];m[f]=e.target.type==="checkbox"?e.target.checked:e.target.value}
+  markDirty();
+});
+edEl.addEventListener("click",async e=>{
+  const b=e.target.closest("button[data-act]");if(!b||!draft)return;
+  const act=b.dataset.act;
+  if(act==="addrow"){draft.teams[b.dataset.t].push({name:"",roles:"",off:false});markDirty();edMsg=null;renderEditor();
+    document.getElementById(`ed-${b.dataset.t}-${draft.teams[b.dataset.t].length-1}-name`)?.focus();return}
+  if(act==="rm"){const r=b.closest(".ed-row");draft.teams[r.dataset.t].splice(+r.dataset.i,1);markDirty();edMsg=null;renderEditor();return}
+  if(act==="discard"){if(draft.isNew){edId=null;draft=null;dirty=false;edMsg=null;renderEditor()}else openSlot(edId);return}
+  if(act==="reload"){await load();openSlot(edId);return}
+  if(act==="del"){confirmDel=true;renderEditor();return}
+  if(act==="delno"){confirmDel=false;renderEditor();return}
+  if(act==="delyes"){
+    saving=true;updateSaveBar();
+    try{
+      const r=await call("deleteSlot",draft.id,draft.version,pass);
+      if(r.ok){const name=draft.boss;applyData(r.data);edId=null;draft=null;dirty=false;edMsg={kind:"good",text:`「${name}」の枠を削除しました。`}}
+      else handleFail(r);
+    }catch(err){edMsg={kind:"bad",text:"削除できませんでした。通信状況を確認してもう一度お試しください。"}}
+    saving=false;confirmDel=false;renderAll();return;
+  }
+  if(act==="save")await save();
+});
+
+async function save(){
+  if(!draft.boss.trim()){edMsg={kind:"bad",text:"ボス名を入力してください。"};renderEditor();return}
+  if(!parseYmd(draft.date)){edMsg={kind:"bad",text:"日付を選んでください。"};renderEditor();return}
+  if(isNaN(toMin(draft.time.trim()))){edMsg={kind:"bad",text:"開始時間を 22:05 のような形で入力してください。"};renderEditor();return}
+  saving=true;updateSaveBar();
+  try{
+    const r=await call("saveSlot",{id:draft.id,version:draft.version,boss:draft.boss,time:draft.time,date:draft.date,teams:draft.teams},pass);
+    if(r.ok){
+      const wasNew=draft.isNew;
+      applyData(r.data);
+      edId=r.id;dirty=false;remoteChanged=false;
+      const s=slots.find(x=>x.id===r.id);draft=s?draftFrom(s):null;
+      edMsg={kind:"good",text:wasNew?`${dateLabel(s?.date)}「${s?.boss} ${s?.time}」の枠を追加しました。`:"保存しました。"};
+    }else handleFail(r);
+  }catch(err){edMsg={kind:"bad",text:"保存できませんでした。通信状況を確認してもう一度保存してください。"}}
+  saving=false;renderAll();
+}
+function handleFail(r){
+  if(r.reason==="auth"){unlocked=false;pass="";store.set("wb-pass","");edMsg={kind:"bad",text:"合言葉が変わったため保存できませんでした。新しい合言葉を入力してください。"}}
+  else if(r.reason==="conflict"){remoteChanged=true;edMsg={kind:"warn",text:"他の人が先にこの枠を保存しました。「最新を読み込む」を押してから編集し直してください。"}}
+  else if(r.reason==="gone"){edMsg={kind:"warn",text:"この枠は他の人が削除しました。"};draft.isNew=true;draft.id=null}
+  else edMsg={kind:"bad",text:r.message||"保存できませんでした。"};
+}
+
+// ---- データ読み込み ----
+function applyData(d){
+  needsPass=!!d.needsPass;
+  slots=normalize(d.slots||[]);loaded=true;
+  const s=draft&&!draft.isNew?slots.find(x=>x.id===edId):null;
+  if(draft&&!draft.isNew){
+    if(!s){if(!dirty){edId=null;draft=null}}
+    else if(!dirty)draft=draftFrom(s);
+    else if(s.version!==draft.version)remoteChanged=true;
+  }
+  const n=new Date();
+  document.getElementById("sync").textContent="更新 "+hhmm(n.getHours()*60+n.getMinutes());
+}
+async function load(){
+  try{
+    const d=await call("getData");
+    applyData(d);loadFailed=false;banner(null);
+  }catch(err){
+    loadFailed=true;
+    banner("bad",loaded?"最新データを取得できませんでした。しばらくすると自動で再読み込みします。":"データを読み込めませんでした。ページを再読み込みしてください。");
+  }
+}
+function renderAll(){
+  document.getElementById("clock").textContent="現在 "+hhmm(nowMin());
+  renderView();renderChara();renderTeam();
+  // 入力中のフォーカスを奪わないよう、編集中は枠一覧だけ更新する
+  if(!dirty||remoteChanged)renderEditor(); else renderSlotChips();
+}
+
+(async()=>{
+  renderAll();
+  if(pass){try{unlocked=(await call("checkPasscode",pass)).ok}catch(e){}}
+  await load();
+  renderAll();
+  // 30秒ごとに最新データを取得（タブが見えているときだけ）
+  setInterval(async()=>{
+    if(document.hidden||saving)return;
+    await load();renderAll();
+  },30000);
+})();
+</script>
+</body>
+</html>
