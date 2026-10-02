@@ -121,7 +121,14 @@ select{font:inherit;font-size:16px;padding:10px 12px;border-radius:10px;border:1
 .chips button .tm{font-family:var(--f-mono);font-weight:600;margin-right:6px}
 .board{display:flex;flex-direction:column;gap:12px}
 .slot{display:grid;grid-template-columns:120px minmax(0,1fr);background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden}
-.slot.past{opacity:.6}
+.slot.done{opacity:.55;background:var(--surface-2)}
+.slot.done .slot-meta{cursor:pointer}
+.slot.collapsed{grid-template-columns:1fr}
+.slot.collapsed .teams{display:none}
+.slot.collapsed .slot-meta{flex-direction:row;align-items:center;gap:10px;border-right:0;padding:10px 14px}
+.slot .ended{font-size:11px;font-weight:700;padding:1px 8px;border-radius:999px;background:var(--line);color:var(--ink-2)}
+.fold{margin-left:auto;font:inherit;font-size:12px;line-height:1;cursor:pointer;border:1px solid var(--line);background:var(--surface);color:var(--ink-2);border-radius:8px;padding:5px 9px}
+.slot:not(.collapsed) .fold{align-self:flex-start;margin-left:0;margin-top:6px}
 .slot-meta{padding:14px;background:var(--surface-2);display:flex;flex-direction:column;gap:2px;border-right:1px solid var(--line)}
 .slot-meta .t{font-family:var(--f-mono);font-weight:600;font-size:18px;font-variant-numeric:tabular-nums}
 .slot-meta .bn{font-family:var(--f-display);font-weight:800;font-size:16px}
@@ -340,6 +347,7 @@ function dateTag(s){
   if(!s)return"";const t=parseYmd(todayStr()),d=parseYmd(s);const n=Math.round((d-t)/864e5);
   return n===0?'<span class="tag">今日</span>':n===1?'<span class="tag soft">明日</span>':"";
 }
+const DONE_AFTER_MIN=20;
 function normalize(list){
   const arr=list.map(s=>{
     const teams={};
@@ -351,7 +359,8 @@ function normalize(list){
     return{id:s.id,boss:String(s.boss||""),time:String(s.time||""),date,version:s.version,teams,start:mins,startMs};
   }).sort((a,b)=>((a.date||"9999")<(b.date||"9999")?-1:(a.date||"9999")>(b.date||"9999")?1:0)||(a.start-b.start)||String(a.id).localeCompare(String(b.id)));
   // 終了時刻 = 同じ日の次の枠の開始（なければ開始の30分後）
-  arr.forEach((s,i)=>{const n=arr[i+1];s.endMs=n&&n.date===s.date&&n.startMs>s.startMs?n.startMs:s.startMs+30*6e4});
+  // 開始から20分たった枠は「終了」扱い（チーム別ではグレーにして閉じる）
+  arr.forEach(s=>{s.endMs=s.startMs+DONE_AFTER_MIN*6e4});
   return arr;
 }
 // 日付ごとにまとめる（並び順は normalize 済み）
@@ -482,6 +491,12 @@ function renderChara(){
 // ---- チーム別 ----
 document.getElementById("teamchips").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;teamFilter=b.dataset.id;store.set("wb-team",teamFilter);renderTeam()});
 let showPast=false;
+// 終了した枠のうち、▼で開いているもの
+const openDone=new Set();
+document.getElementById("board").addEventListener("click",e=>{
+  const t=e.target.closest("[data-fold]");if(!t)return;
+  const id=t.dataset.fold;openDone.has(id)?openDone.delete(id):openDone.add(id);renderTeam();
+});
 // 表示する日付: "" は「いちばん近い日付」、"all" はすべて、それ以外は yyyy-mm-dd
 let dateFilter=store.get("wb-date","");
 document.getElementById("datechips").addEventListener("click",e=>{
@@ -507,9 +522,10 @@ function renderTeam(){
     `<button type="button" data-date="all" aria-pressed="${cur==="all"}">すべて</button>`+
     (pastN?`<button type="button" class="past-toggle" data-act="past">${showPast?"過去を隠す":`過去も表示（${pastN}日）`}</button>`:""):"";
   const slotHTML=s=>{
-    const past=s.endMs<=now, live=s.startMs<=now&&now<s.endMs;
-    return`<article class="slot ${past?"past":""}">
-      <div class="slot-meta"><span class="t">${esc(s.time)}</span><span class="bn">${esc(s.boss)}</span>${live?'<span class="live">進行中</span>':""}</div>
+    const done=s.endMs<=now, live=s.startMs<=now&&now<s.endMs, collapsed=done&&!openDone.has(s.id);
+    return`<article class="slot ${done?"done":""} ${collapsed?"collapsed":""}">
+      <div class="slot-meta" ${done?`data-fold="${esc(s.id)}"`:""}><span class="t">${esc(s.time)}</span><span class="bn">${esc(s.boss)}</span>${live?'<span class="live">進行中</span>':""}${done?'<span class="ended">終了</span>':""}${
+        done?`<button type="button" class="fold" data-fold="${esc(s.id)}" aria-expanded="${!collapsed}" aria-label="${esc(s.boss)}の参加者を${collapsed?"開く":"閉じる"}">${collapsed?"▼":"▲"}</button>`:""}</div>
       <div class="teams" style="--cols:${shown.length}">${shown.map(t=>{
         const ms=s.teams[t.id], cnt=ms.filter(m=>!m.off).length;
         return`<div class="team ${t.id}"><div class="team-h"><span class="lbl">${esc(t.label)}</span><span class="n">${ms.length?cnt+"名":""}</span></div>${
