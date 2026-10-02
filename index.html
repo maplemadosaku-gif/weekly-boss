@@ -4,6 +4,16 @@
 <base target="_top">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<script>
+// 表示モード: auto（端末の幅に合わせる）/ pc（PC表示を固定）/ sp（スマホ表示を固定）
+function applyLayout(m){
+  var vp=document.querySelector('meta[name=viewport]');
+  document.documentElement.classList.toggle("view-sp",m==="sp");
+  document.documentElement.classList.toggle("view-pc",m==="pc");
+  if(vp)vp.setAttribute("content",m==="pc"?"width=1180":"width=device-width, initial-scale=1, viewport-fit=cover");
+}
+try{applyLayout(localStorage.getItem("wb-layout")||"auto")}catch(e){}
+</script>
 <title>週ボス編成表</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;700;800&family=Noto+Sans+JP:wght@400;500;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
@@ -211,6 +221,19 @@ input[type=date]{font:inherit;font-size:15px;padding:7px 10px;border-radius:8px;
 .saved{font-size:13px;color:var(--ink-3)}
 .loading{padding:40px 0;text-align:center;color:var(--ink-3)}
 @media (prefers-reduced-motion:no-preference){.maintabs button,.chips button,.btn{transition:background .15s,color .15s}}
+/* スマホ表示を固定したとき（PCで見ていてもスマホの並びにする） */
+html.view-sp .wrap,html.view-sp .top-in{max-width:430px}
+html.view-sp .me{grid-template-columns:1fr}
+html.view-sp .slot{grid-template-columns:1fr}
+html.view-sp .slot-meta{flex-direction:row;align-items:baseline;gap:10px;border-right:0;border-bottom:1px solid var(--line);padding:10px 14px}
+html.view-sp .slot-meta .live{margin:0}
+html.view-sp .teams{grid-template-columns:1fr}
+html.view-sp .team{border-left:0;border-top:1px solid var(--line)}
+html.view-sp .team:first-child{border-top:0}
+html.view-sp .filters{align-items:flex-start}
+html.view-sp .ed-teams{grid-template-columns:1fr}
+html.view-sp .modal-card{max-width:430px}
+.btn-layout{font:inherit;font-weight:700;font-size:13px;cursor:pointer;padding:7px 12px;border-radius:9px;border:1px solid var(--line);background:var(--surface);color:var(--ink-2);white-space:nowrap}
 </style>
 </head>
 <body>
@@ -218,6 +241,7 @@ input[type=date]{font:inherit;font-size:15px;padding:7px 10px;border-radius:8px;
   <div class="top-in">
     <div class="brand"><h1>週ボス編成表</h1><span class="clock" id="clock">--:--</span><span class="clock" id="sync"></span></div>
     <div class="top-right">
+    <button type="button" class="btn-layout" id="btn-layout" title="押すたびに 自動 → PC → スマホ と切り替わります">表示：自動</button>
     <button type="button" class="btn-line" id="btn-line">2%ライン確認表</button>
     <div class="maintabs" role="tablist" aria-label="表示切り替え">
       <button type="button" role="tab" id="tab-chara" data-view="chara" aria-selected="true">キャラ別</button>
@@ -381,6 +405,12 @@ function renderLineTables(){
     <tr><td>チーム復活回数</td>${DUSK_TABLE.revive.map(v=>`<td class="v">${v}</td>`).join("")}</tr></tbody></table>`;
 }
 const lm=document.getElementById("linemodal");
+const LAYOUTS=["auto","pc","sp"], LAYOUT_LABEL={auto:"自動",pc:"PC",sp:"スマホ"};
+let layout=store.get("wb-layout","auto");if(!LAYOUTS.includes(layout))layout="auto";
+const btnLayout=document.getElementById("btn-layout");
+const showLayout=()=>{btnLayout.textContent="表示："+LAYOUT_LABEL[layout];btnLayout.setAttribute("aria-label","表示モード："+LAYOUT_LABEL[layout]+"（押すと切り替え）")};
+showLayout();
+btnLayout.addEventListener("click",()=>{layout=LAYOUTS[(LAYOUTS.indexOf(layout)+1)%LAYOUTS.length];store.set("wb-layout",layout);applyLayout(layout);showLayout()});
 document.getElementById("btn-line").addEventListener("click",()=>{renderLineTables();lm.hidden=false;document.getElementById("lm-close").focus()});
 document.getElementById("lm-close").addEventListener("click",()=>{lm.hidden=true});
 lm.addEventListener("click",e=>{if(e.target===lm)lm.hidden=true});
