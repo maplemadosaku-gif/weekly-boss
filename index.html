@@ -187,13 +187,19 @@ select{font:inherit;font-size:16px;padding:10px 12px;border-radius:10px;border:1
 .plan .dgroup:first-of-type .dlabel{border-top:0;padding-top:0}
 .plan .dgroup li:first-child{border-top:0}
 .chip-group{display:flex;flex-direction:column;gap:6px}
-.chip-group .glabel{font-size:12px;font-weight:700;color:var(--ink-2)}
+.chip-group .glabel{font-size:12px;font-weight:700;color:var(--ink-2);display:inline-flex;align-items:center;gap:6px}
+.chip-group .ghead{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px}
+.chip-group.hist .chips button{opacity:.6}
+.hist-tag{font-size:10px;font-weight:700;padding:0 7px;border-radius:999px;background:var(--line);color:var(--ink-2)}
+.btn.sm{font-size:12px;padding:4px 10px}
+.btn.ghost.sm{border-color:var(--accent);color:var(--accent);background:transparent}
+.dup-form{display:flex;flex-wrap:wrap;align-items:flex-end;gap:10px 12px;padding:12px;border:1px dashed var(--accent);border-radius:12px;background:var(--accent-soft)}
+.dup-form .fld{width:190px;max-width:100%}
 .slotchips-wrap{display:flex;flex-direction:column;gap:12px;width:100%}
 .filters{display:flex;flex-direction:column;gap:8px;align-items:flex-end;min-width:0}
 @media (max-width:760px){.filters{align-items:flex-start}}
 .chips.dates button{font-size:12px;padding:5px 12px}
 .chips.dates button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
-.chips.dates .past-toggle{border-style:dashed;color:var(--ink-3)}
 .legend{display:flex;flex-wrap:wrap;gap:14px;color:var(--ink-3);font-size:12px;align-items:center}
 .legend span{display:inline-flex;align-items:center;gap:6px}
 .sw{width:14px;height:14px;border-radius:4px;background:var(--hl);display:inline-block}
@@ -364,6 +370,14 @@ function normalize(list){
   return arr;
 }
 // 日付ごとにまとめる（並び順は normalize 済み）
+// 全部の枠が終わった日付（キャラ別・チーム別では出さない）
+function finishedDates(now){
+  const all=new Map();
+  for(const s of slots){if(!s.date)continue;const done=!isNaN(s.endMs)&&s.endMs<=now;all.set(s.date,(all.get(s.date)??true)&&done)}
+  return new Set([...all].filter(([,v])=>v).map(([k])=>k));
+}
+const addDays=(ds,n)=>{const d=parseYmd(ds);d.setDate(d.getDate()+n);return ymd(d)};
+const HISTORY_DAYS=14; // 編集画面に残す過去の日数
 function groupByDate(list){const g=[];for(const s of list){const last=g[g.length-1];if(last&&last.date===s.date)last.items.push(s);else g.push({date:s.date,items:[s]})}return g}
 function allNames(){return[...new Set(slots.flatMap(s=>TEAMS.flatMap(t=>s.teams[t.id].map(m=>m.name))).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"ja"))}
 const rolesHTML=m=>{
@@ -453,11 +467,11 @@ function renderChara(){
   if(!names.includes(who))who=names[0]||"";
   if([...sel.options].map(o=>o.value).join("\n")!==names.join("\n"))sel.innerHTML=names.map(n=>`<option value="${esc(n)}">${esc(n)}</option>`).join("");
   sel.value=who;
-  const now=Date.now(), today=todayStr();
+  const now=Date.now(), finished=finishedDates(now);
   // このキャラが入っている枠だけ（過去の日付は出さない）
   const entries=[];
   for(const s of slots){
-    if(s.date&&s.date<today)continue;
+    if(s.date&&finished.has(s.date))continue;
     for(const t of TEAMS){const m=s.teams[t.id].find(x=>x.name===who);if(m){entries.push({slot:s,team:t,m});break}}
   }
   const joins=entries.filter(a=>!a.m.off);
@@ -490,7 +504,6 @@ function renderChara(){
 
 // ---- チーム別 ----
 document.getElementById("teamchips").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;teamFilter=b.dataset.id;store.set("wb-team",teamFilter);renderTeam()});
-let showPast=false;
 // 終了した枠のうち、▼で開いているもの
 const openDone=new Set();
 document.getElementById("board").addEventListener("click",e=>{
@@ -501,8 +514,7 @@ document.getElementById("board").addEventListener("click",e=>{
 let dateFilter=store.get("wb-date","");
 document.getElementById("datechips").addEventListener("click",e=>{
   const b=e.target.closest("button");if(!b)return;
-  if(b.dataset.act==="past"){showPast=!showPast;if(!showPast&&dateFilter&&dateFilter!=="all"&&dateFilter<todayStr())dateFilter=""}
-  else dateFilter=b.dataset.date;
+  dateFilter=b.dataset.date;
   store.set("wb-date",dateFilter);renderTeam();
 });
 function renderTeam(){
@@ -511,16 +523,15 @@ function renderTeam(){
   const now=Date.now(), today=todayStr();
   const shown=teamFilter==="all"?TEAMS:TEAMS.filter(t=>t.id===teamFilter);
   const groups=groupByDate(slots);
-  const pastN=groups.filter(g=>g.date&&g.date<today).length;
-  const candidates=groups.filter(g=>showPast||!g.date||g.date>=today);
+  const finished=finishedDates(now);
+  const candidates=groups.filter(g=>!finished.has(g.date));
   // 選んだ日付がもう無ければ、いちばん近い日付に戻す
-  const upcoming=candidates.find(g=>!g.date||g.date>=today)||candidates[0];
+  const upcoming=candidates[0];
   const cur=dateFilter==="all"?"all":candidates.some(g=>g.date===dateFilter)?dateFilter:(upcoming?upcoming.date:"all");
   const visible=cur==="all"?candidates:candidates.filter(g=>g.date===cur);
   document.getElementById("datechips").innerHTML=candidates.length?
     candidates.map(g=>`<button type="button" data-date="${esc(g.date)}" aria-pressed="${cur===g.date}">${esc(dateLabel(g.date))}${g.date===today?" 今日":""}</button>`).join("")+
-    `<button type="button" data-date="all" aria-pressed="${cur==="all"}">すべて</button>`+
-    (pastN?`<button type="button" class="past-toggle" data-act="past">${showPast?"過去を隠す":`過去も表示（${pastN}日）`}</button>`:""):"";
+    `<button type="button" data-date="all" aria-pressed="${cur==="all"}">すべて</button>`:"";
   const slotHTML=s=>{
     const done=s.endMs<=now, live=s.startMs<=now&&now<s.endMs, collapsed=done&&!openDone.has(s.id);
     return`<article class="slot ${done?"done":""} ${collapsed?"collapsed":""}">
@@ -532,9 +543,9 @@ function renderTeam(){
           ms.length?`<ul class="members">${ms.map(m=>`<li class="${m.name===who?"me-hl":""} ${m.off?"off":""}"><span class="nm">${esc(m.name)}</span>${rolesHTML(m)}</li>`).join("")}</ul>${lineHTML(s.boss,cnt)}`:'<div class="none">この枠はなし</div>'
         }</div>`}).join("")}</div></article>`};
   document.getElementById("board").innerHTML=
-    (visible.length?visible.map(g=>`<section class="day ${g.date&&g.date<today?"past":""}">
+    (visible.length?visible.map(g=>`<section class="day">
       <div class="day-h"><h3>${esc(dateLabel(g.date))}</h3>${dateTag(g.date)}<span class="cnt">${g.items.length}枠</span></div>
-      ${g.items.map(slotHTML).join("")}</section>`).join(""):'<div class="empty">今後のボス枠はありません。「編集」タブから追加できます。</div>');
+      ${g.items.map(slotHTML).join("")}</section>`).join(""):'<div class="empty">今後のボス枠はありません。「編集」タブから追加するか、過去の日付の編成を複製してください。</div>');
 }
 
 // ---- 編集 ----
@@ -547,8 +558,15 @@ function openSlot(id){
 }
 function markDirty(){if(!dirty){dirty=true;updateSaveBar()}}
 
-document.getElementById("slotchips").addEventListener("click",e=>{
+// 複製: dupFrom=複製元の日付, dupTo=複製先, dupConfirm=複製先に枠がある時の確認待ち
+let dupFrom=null, dupTo="", dupConfirm=false, dupBusy=false;
+document.getElementById("slotchips").addEventListener("input",e=>{if(e.target.id==="dup-to"){dupTo=e.target.value;dupConfirm=false;const w=document.getElementById("dup-warn");if(w)w.remove()}});
+document.getElementById("slotchips").addEventListener("click",async e=>{
   const b=e.target.closest("button");if(!b)return;
+  const act=b.dataset.act;
+  if(act==="dup-open"){dupFrom=b.dataset.date;dupTo=addDays(dupFrom,7);dupConfirm=false;renderSlotChips();document.getElementById("dup-to")?.focus();return}
+  if(act==="dup-cancel"){dupFrom=null;renderSlotChips();return}
+  if(act==="dup-run"){await runDuplicate();return}
   if(dirty&&b.dataset.id!==edId){edMsg={kind:"warn",text:"未保存の変更があります。保存するか「変更を破棄」してから別の枠を開いてください。"};renderEditor();return}
   if(b.dataset.act==="add"){
     // 新しい枠の日付は、開いていた枠の日付（なければ今日）を初期値にする
@@ -559,14 +577,45 @@ document.getElementById("slotchips").addEventListener("click",e=>{
   openSlot(b.dataset.id);
 });
 function renderSlotChips(){
-  const today=todayStr();
-  const groups=groupByDate(slots).filter(g=>!g.date||g.date>=today||g.items.some(s=>s.id===edId));
+  const today=todayStr(), since=addDays(today,-HISTORY_DAYS), now=Date.now(), finished=finishedDates(now);
+  const groups=groupByDate(slots).filter(g=>!g.date||g.date>=since||g.items.some(s=>s.id===edId));
   const hidden=slots.length-groups.reduce((n,g)=>n+g.items.length,0);
+  const dupForm=g=>{
+    if(dupFrom!==g.date)return"";
+    const exist=dupTo?slots.filter(s=>s.date===dupTo).length:0;
+    return`<div class="dup-form">
+      <label class="fld"><span>複製先の日付${dupTo&&parseYmd(dupTo)?`（${WD[parseYmd(dupTo).getDay()]}曜日）`:""}</span><input type="date" id="dup-to" value="${esc(dupTo)}"></label>
+      <div class="row" style="gap:8px">
+        <button type="button" class="btn primary" data-act="dup-run" ${dupBusy?"disabled":""}>${dupBusy?"複製中…":dupConfirm?"それでも追加する":`${g.items.length}枠を複製する`}</button>
+        <button type="button" class="btn" data-act="dup-cancel">やめる</button>
+      </div>
+      ${dupConfirm&&exist?`<p class="dirty" id="dup-warn" style="margin:0">${esc(dateLabel(dupTo))}にはすでに${exist}枠あります。複製した枠は追加されます（今ある枠は消えません）。</p>`:""}
+    </div>`;
+  };
   document.getElementById("slotchips").innerHTML=`<div class="slotchips-wrap">${groups.map(g=>`
-    <div class="chip-group"><span class="glabel">${esc(dateLabel(g.date))}</span><div class="chips">${g.items.map(s=>`<button type="button" data-id="${esc(s.id)}" aria-pressed="${s.id===edId}"><span class="tm">${esc(s.time)}</span>${esc(s.boss)}</button>`).join("")}</div></div>`).join("")}
+    <div class="chip-group ${g.date&&finished.has(g.date)?"hist":""}">
+      <div class="ghead"><span class="glabel">${esc(dateLabel(g.date))}${g.date&&finished.has(g.date)?'<span class="hist-tag">終了</span>':""}</span>
+      ${canEdit()&&g.date&&dupFrom!==g.date?`<button type="button" class="btn ghost sm" data-act="dup-open" data-date="${esc(g.date)}">この日付の編成を複製</button>`:""}</div>
+      <div class="chips">${g.items.map(s=>`<button type="button" data-id="${esc(s.id)}" aria-pressed="${s.id===edId}"><span class="tm">${esc(s.time)}</span>${esc(s.boss)}</button>`).join("")}</div>
+      ${dupForm(g)}</div>`).join("")}
     ${draft?.isNew?`<div class="chip-group"><span class="glabel">新しい枠</span><div class="chips"><button type="button" data-id="__new" aria-pressed="true">新しい枠</button></div></div>`:""}
-    ${hidden?`<span class="hint">過去の日付の枠（${hidden}件）は一覧から省いています。</span>`:""}
+    ${hidden?`<span class="hint">${HISTORY_DAYS}日より前の枠（${hidden}件）は一覧から省いています。</span>`:""}
     ${canEdit()&&loaded?'<button type="button" class="btn" data-act="add" style="align-self:flex-start">＋ 枠を追加</button>':""}</div>`;
+}
+
+async function runDuplicate(){
+  if(!parseYmd(dupTo)){edMsg={kind:"bad",text:"複製先の日付を選んでください。"};renderEditor();return}
+  if(dupTo===dupFrom){edMsg={kind:"bad",text:"複製元と同じ日付は選べません。"};renderEditor();return}
+  if(dirty){edMsg={kind:"warn",text:"未保存の変更があります。保存するか「変更を破棄」してから複製してください。"};renderEditor();return}
+  const exist=slots.filter(s=>s.date===dupTo).length;
+  if(exist&&!dupConfirm){dupConfirm=true;renderSlotChips();return}
+  dupBusy=true;renderSlotChips();
+  try{
+    const r=await call("duplicateDate",dupFrom,dupTo,pass);
+    if(r.ok){applyData(r.data);edMsg={kind:"good",text:`${dateLabel(dupFrom)}の編成（${r.count}枠）を${dateLabel(dupTo)}に複製しました。枠を選んで調整してください。`};dupFrom=null;edId=null;draft=null}
+    else handleFail(r);
+  }catch(err){edMsg={kind:"bad",text:"複製できませんでした。通信状況を確認してもう一度お試しください。"}}
+  dupBusy=false;dupConfirm=false;renderAll();
 }
 
 function renderEditor(){
@@ -722,6 +771,8 @@ function renderAll(){
   document.getElementById("clock").textContent="現在 "+hhmm(nowMin());
   renderView();renderChara();renderTeam();
   // 入力中のフォーカスを奪わないよう、編集中は枠一覧だけ更新する
+  // 複製先のカレンダーを操作している途中なら描き直さない（30秒ごとの更新で入力が消えないように）
+  if(document.activeElement?.id==="dup-to")return;
   if(!dirty||remoteChanged)renderEditor(); else renderSlotChips();
 }
 
